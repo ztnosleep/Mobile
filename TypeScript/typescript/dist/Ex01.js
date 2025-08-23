@@ -12,4 +12,4 @@ class Person {
 }
 exports.Person = Person;
 const Person1 = new Person('Thái', 20);
-
+Person1.displayInfo();
