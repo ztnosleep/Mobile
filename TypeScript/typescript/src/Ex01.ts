@@ -1,4 +1,4 @@
-class Person{
+export class Person{
   name: String;
   age: Number;
   constructor(name: String, age: Number){
