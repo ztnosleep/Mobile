@@ -9,21 +9,23 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
+  TextInput,
 } from "react-native";
-import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { createTable, getExpenses, deleteExpense } from "../database/db";
-
 
 export default function MainScreen({ navigation }) {
   const [expenses, setExpenses] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(false);
-  const isFocused = useIsFocused();
+  const [search, setSearch] = useState("");
 
   const loadExpenses = async () => {
     setLoading(true);
     try {
       const data = await getExpenses();
       setExpenses(data || []);
+      setFiltered(data || []);
     } catch (err) {
       console.error("MainScreen loadExpenses error:", err);
     } finally {
@@ -31,37 +33,48 @@ export default function MainScreen({ navigation }) {
     }
   };
 
-  // Load dữ liệu mỗi khi vào lại màn hình
   useFocusEffect(
     useCallback(() => {
       loadExpenses();
     }, [])
   );
 
-useEffect(() => {
-  const initDB = async () => {
-    try {
-      console.log("🔧 Tạo bảng...");
+  useEffect(() => {
+    (async () => {
       await createTable();
-      console.log("✅ Bảng đã sẵn sàng");
       await loadExpenses();
-    } catch (err) {
-      console.error("MainScreen initDB error:", err);
+    })();
+  }, []);
+
+  const handleSearch = (text) => {
+    setSearch(text);
+    if (text.trim() === "") {
+      setFiltered(expenses);
+    } else {
+      const lower = text.toLowerCase();
+      const result = expenses.filter((e) =>
+        e.title.toLowerCase().includes(lower)
+      );
+      setFiltered(result);
     }
   };
-  initDB();
-}, []);
-
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.header}>💰 EXPENSE TRACKER</Text>
 
+      <TextInput
+        style={styles.searchBox}
+        placeholder="🔍 Tìm kiếm khoản thu/chi..."
+        value={search}
+        onChangeText={handleSearch}
+      />
+
       {loading ? (
         <ActivityIndicator size="large" style={{ marginTop: 20 }} />
       ) : (
         <FlatList
-          data={expenses}
+          data={filtered}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -83,7 +96,7 @@ useEffect(() => {
                       style: "destructive",
                       onPress: async () => {
                         await deleteExpense(item.id);
-                        await loadExpenses(); // Cập nhật lại danh sách
+                        await loadExpenses();
                       },
                     },
                   ]
@@ -102,7 +115,7 @@ useEffect(() => {
           )}
           ListEmptyComponent={
             <Text style={{ textAlign: "center", color: "#aaa", marginTop: 20 }}>
-              Chưa có dữ liệu
+              Không có dữ liệu
             </Text>
           }
         />
@@ -110,10 +123,11 @@ useEffect(() => {
 
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => navigation.navigate("Add")} // 👈 mở màn hình thêm
+        onPress={() => navigation.navigate("Add")}
       >
         <Text style={styles.addText}>+</Text>
       </TouchableOpacity>
+
       <TouchableOpacity
         style={[styles.addButton, { bottom: 100, backgroundColor: "gray" }]}
         onPress={() => navigation.navigate("Trash")}
@@ -131,6 +145,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginVertical: 12,
+  },
+  searchBox: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
   },
   item: {
     flexDirection: "row",

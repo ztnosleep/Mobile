@@ -1,24 +1,28 @@
 // screens/TrashScreen.js
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
+  SafeAreaView,
   View,
   Text,
   FlatList,
-  SafeAreaView,
-  StyleSheet,
   ActivityIndicator,
+  StyleSheet,
+  TextInput,
 } from "react-native";
 import { getTrash } from "../database/db";
 
 export default function TrashScreen() {
   const [trash, setTrash] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
   const loadTrash = async () => {
     setLoading(true);
     try {
       const data = await getTrash();
       setTrash(data || []);
+      setFiltered(data || []);
     } catch (err) {
       console.error("loadTrash error:", err);
     } finally {
@@ -30,30 +34,46 @@ export default function TrashScreen() {
     loadTrash();
   }, []);
 
+  const handleSearch = (text) => {
+    setSearch(text);
+    if (text.trim() === "") {
+      setFiltered(trash);
+    } else {
+      const lower = text.toLowerCase();
+      const result = trash.filter((e) =>
+        e.title.toLowerCase().includes(lower)
+      );
+      setFiltered(result);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.header}>🗑️ Thùng rác</Text>
+
+      <TextInput
+        style={styles.searchBox}
+        placeholder="🔍 Tìm kiếm khoản đã xóa..."
+        value={search}
+        onChangeText={handleSearch}
+      />
 
       {loading ? (
         <ActivityIndicator size="large" />
       ) : (
         <FlatList
-          data={trash}
+          data={filtered}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View style={styles.item}>
               <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.sub}>
-                {item.amount} đ - {item.type}
-              </Text>
-              <Text style={styles.date}>
-                Xóa lúc: {item.deletedAt?.replace("T", " ")}
-              </Text>
+              <Text style={styles.amount}>{item.amount} đ</Text>
+              <Text style={styles.date}>Đã xóa: {item.deletedAt}</Text>
             </View>
           )}
           ListEmptyComponent={
-            <Text style={{ textAlign: "center", color: "#888" }}>
-              Không có khoản nào bị xóa
+            <Text style={{ textAlign: "center", color: "#aaa", marginTop: 20 }}>
+              Không có dữ liệu đã xóa
             </Text>
           }
         />
@@ -63,15 +83,22 @@ export default function TrashScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFF", padding: 16 },
-  header: { fontSize: 24, fontWeight: "bold", textAlign: "center", margin: 12 },
+  container: { flex: 1, backgroundColor: "#FFF", paddingHorizontal: 16 },
+  header: { fontSize: 22, fontWeight: "bold", textAlign: "center", margin: 12 },
+  searchBox: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
   item: {
     backgroundColor: "#F5F5F5",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     marginBottom: 8,
   },
   title: { fontSize: 16, fontWeight: "bold" },
-  sub: { color: "#555" },
-  date: { color: "#888", fontSize: 12 },
+  amount: { fontSize: 14, color: "#555" },
+  date: { fontSize: 12, color: "#999" },
 });
