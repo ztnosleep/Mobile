@@ -4,6 +4,8 @@ import MainScreen from "./screens/MainScreen";
 import EditExpenseScreen from "./screens/EditExpenseScreen";
 import AddScreen from "./screens/AddExpenseScreen";
 import  TrashScreen from "./screens/TrashScreen";
+import StatisticsScreen from "./screens/StatisticsScreen";
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -26,6 +28,8 @@ export default function App() {
           component={TrashScreen}
           options={{ title: "Thùng rác" }}
         />
+        <Stack.Screen name="Statistics" component={StatisticsScreen} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

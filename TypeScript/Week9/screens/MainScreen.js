@@ -247,36 +247,42 @@ export default function MainScreen({ navigation }) {
       >
         <Text style={styles.addText}>🗑️</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.addButton, { bottom: 170, backgroundColor: "#4CAF50" }]}
+        onPress={() => navigation.navigate("Statistics")}
+      >
+        <Text style={styles.addText}>📊</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   filterContainer: {
-  flexDirection: "row",
-  justifyContent: "center",
-  marginBottom: 10,
-},
-filterButton: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  paddingVertical: 6,
-  paddingHorizontal: 12,
-  marginHorizontal: 4,
-},
-filterButtonActive: {
-  backgroundColor: "#2196F3",
-  borderColor: "#2196F3",
-},
-filterText: {
-  color: "#333",
-  fontWeight: "500",
-},
-filterTextActive: {
-  color: "#fff",
-  fontWeight: "bold",
-},
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  filterButton: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginHorizontal: 4,
+  },
+  filterButtonActive: {
+    backgroundColor: "#2196F3",
+    borderColor: "#2196F3",
+  },
+  filterText: {
+    color: "#333",
+    fontWeight: "500",
+  },
+  filterTextActive: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
 
   container: { flex: 1, backgroundColor: "#FFF", paddingHorizontal: 16 },
   header: {
