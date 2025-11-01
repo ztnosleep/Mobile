@@ -12,6 +12,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import axios from "axios";
 import { createTable, getExpenses, deleteExpense } from "../database/db";
 
 export default function MainScreen({ navigation }) {
@@ -20,7 +21,12 @@ export default function MainScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
+  const [apiUrl, setApiUrl] = useState(""); // 🔗 cho phép nhập link API tùy chọn
 
+  const DEFAULT_API =
+    "https://6832d717c3f2222a8cb3e56f.mockapi.io/Expense"; // link mặc định
+
+  // 📦 Load dữ liệu từ SQLite
   const loadExpenses = async () => {
     try {
       const data = await getExpenses();
@@ -44,6 +50,7 @@ export default function MainScreen({ navigation }) {
     })();
   }, []);
 
+  // 🔍 Tìm kiếm
   const handleSearch = (text) => {
     setSearch(text);
     if (text.trim() === "") setFiltered(expenses);
@@ -53,16 +60,61 @@ export default function MainScreen({ navigation }) {
     }
   };
 
+  // 🔄 Làm mới danh sách
   const onRefresh = async () => {
     setRefreshing(true);
     await loadExpenses();
     setRefreshing(false);
   };
 
+  // ☁️ Đồng bộ dữ liệu lên MockAPI (hoặc API người dùng nhập)
+  const syncData = async () => {
+    const url = apiUrl.trim() || DEFAULT_API; // Nếu người dùng không nhập → dùng mặc định
+    try {
+      setLoading(true);
+      const data = await getExpenses();
+
+      console.log(`🔗 Đồng bộ tới: ${url}`);
+      console.log(`📦 Tổng số dữ liệu: ${data.length}`);
+
+      // 1️⃣ Xóa toàn bộ dữ liệu trên API
+      const existing = await axios.get(url);
+      for (const item of existing.data) {
+        await axios.delete(`${url}/${item.id}`);
+      }
+
+      // 2️⃣ Gửi toàn bộ dữ liệu SQLite lên API
+      for (const exp of data) {
+        await axios.post(url, exp);
+      }
+
+      Alert.alert("✅ Đồng bộ thành công", `Đã gửi ${data.length} bản ghi lên API`);
+    } catch (err) {
+      console.error("❌ Sync error:", err);
+      Alert.alert("Lỗi đồng bộ", "Không thể kết nối hoặc link API không hợp lệ!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.header}>💰 EXPENSE TRACKER</Text>
 
+      {/* Ô nhập link API */}
+      <TextInput
+        style={styles.apiInput}
+        placeholder="Nhập link MockAPI để đồng bộ (bỏ trống để dùng link mặc định)"
+        value={apiUrl}
+        onChangeText={setApiUrl}
+      />
+
+      {/* Nút đồng bộ */}
+      <TouchableOpacity style={styles.syncButton} onPress={syncData}>
+        <Text style={styles.syncText}>🔄 Đồng bộ dữ liệu</Text>
+      </TouchableOpacity>
+
+      {/* Ô tìm kiếm */}
       <TextInput
         style={styles.searchBox}
         placeholder="🔍 Tìm kiếm khoản thu/chi..."
@@ -149,6 +201,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginVertical: 12,
   },
+  apiInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+  },
+  syncButton: {
+    backgroundColor: "#4CAF50",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  syncText: { color: "#FFF", fontSize: 16, fontWeight: "bold" },
   searchBox: {
     borderWidth: 1,
     borderColor: "#ccc",

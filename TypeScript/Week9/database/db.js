@@ -71,3 +71,7 @@ export const restoreExpense = async (id) => {
     await db.runAsync("DELETE FROM trash WHERE id = ?", [id]);
   }
 };
+export const getAllExpenses = async () => {
+  const result = await db.getAllAsync("SELECT * FROM expenses");
+  return result || [];
+};
