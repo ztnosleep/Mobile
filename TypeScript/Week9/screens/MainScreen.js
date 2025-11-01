@@ -22,9 +22,9 @@ export default function MainScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [apiUrl, setApiUrl] = useState(""); // 🔗 cho phép nhập link API tùy chọn
+  const [filterType, setFilterType] = useState("Tất cả"); // "Tất cả", "Thu", "Chi"
 
-  const DEFAULT_API =
-    "https://6832d717c3f2222a8cb3e56f.mockapi.io/Expense"; // link mặc định
+  const DEFAULT_API = "https://6832d717c3f2222a8cb3e56f.mockapi.io/Expense"; // link mặc định
 
   // 📦 Load dữ liệu từ SQLite
   const loadExpenses = async () => {
@@ -56,10 +56,28 @@ export default function MainScreen({ navigation }) {
     if (text.trim() === "") setFiltered(expenses);
     else {
       const lower = text.toLowerCase();
-      setFiltered(expenses.filter((e) => e.title.toLowerCase().includes(lower)));
+      setFiltered(
+        expenses.filter((e) => e.title.toLowerCase().includes(lower))
+      );
     }
   };
+  const handleSearchWithType = (text) => {
+    setSearch(text);
+    const lower = text.toLowerCase();
+    let result = expenses;
 
+    // lọc theo loại Thu/Chi
+    if (filterType !== "Tất cả") {
+      result = result.filter((e) => e.type === filterType);
+    }
+
+    // lọc theo từ khóa
+    if (text.trim() !== "") {
+      result = result.filter((e) => e.title.toLowerCase().includes(lower));
+    }
+
+    setFiltered(result);
+  };
   // 🔄 Làm mới danh sách
   const onRefresh = async () => {
     setRefreshing(true);
@@ -88,10 +106,16 @@ export default function MainScreen({ navigation }) {
         await axios.post(url, exp);
       }
 
-      Alert.alert("✅ Đồng bộ thành công", `Đã gửi ${data.length} bản ghi lên API`);
+      Alert.alert(
+        "✅ Đồng bộ thành công",
+        `Đã gửi ${data.length} bản ghi lên API`
+      );
     } catch (err) {
       console.error("❌ Sync error:", err);
-      Alert.alert("Lỗi đồng bộ", "Không thể kết nối hoặc link API không hợp lệ!");
+      Alert.alert(
+        "Lỗi đồng bộ",
+        "Không thể kết nối hoặc link API không hợp lệ!"
+      );
     } finally {
       setLoading(false);
     }
@@ -121,6 +145,40 @@ export default function MainScreen({ navigation }) {
         value={search}
         onChangeText={handleSearch}
       />
+      {/* Thanh chọn lọc loại Thu/Chi */}
+      <View style={styles.filterContainer}>
+        {["Tất cả", "Thu", "Chi"].map((type) => (
+          <TouchableOpacity
+            key={type}
+            style={[
+              styles.filterButton,
+              filterType === type && styles.filterButtonActive,
+            ]}
+            onPress={() => {
+              setFilterType(type);
+
+              // Cập nhật danh sách khi đổi loại
+              let result = expenses;
+              if (type !== "Tất cả")
+                result = result.filter((e) => e.type === type);
+              if (search.trim() !== "")
+                result = result.filter((e) =>
+                  e.title.toLowerCase().includes(search.toLowerCase())
+                );
+              setFiltered(result);
+            }}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                filterType === type && styles.filterTextActive,
+              ]}
+            >
+              {type}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {loading ? (
         <ActivityIndicator size="large" style={{ marginTop: 20 }} />
@@ -194,6 +252,32 @@ export default function MainScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  filterContainer: {
+  flexDirection: "row",
+  justifyContent: "center",
+  marginBottom: 10,
+},
+filterButton: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 8,
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  marginHorizontal: 4,
+},
+filterButtonActive: {
+  backgroundColor: "#2196F3",
+  borderColor: "#2196F3",
+},
+filterText: {
+  color: "#333",
+  fontWeight: "500",
+},
+filterTextActive: {
+  color: "#fff",
+  fontWeight: "bold",
+},
+
   container: { flex: 1, backgroundColor: "#FFF", paddingHorizontal: 16 },
   header: {
     fontSize: 24,
