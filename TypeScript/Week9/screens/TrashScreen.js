@@ -8,8 +8,10 @@ import {
   StyleSheet,
   TextInput,
   RefreshControl,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
-import { getTrash } from "../database/db";
+import { getTrash, restoreExpense } from "../database/db";
 
 export default function TrashScreen() {
   const [trash, setTrash] = useState([]);
@@ -19,12 +21,15 @@ export default function TrashScreen() {
   const [search, setSearch] = useState("");
 
   const loadTrash = async () => {
+    setLoading(true);
     try {
       const data = await getTrash();
       setTrash(data || []);
       setFiltered(data || []);
     } catch (err) {
       console.error("loadTrash error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,6 +50,23 @@ export default function TrashScreen() {
     setRefreshing(true);
     await loadTrash();
     setRefreshing(false);
+  };
+
+  const handleRestore = (item) => {
+    Alert.alert(
+      "Khôi phục khoản này?",
+      `Bạn có muốn khôi phục "${item.title}" không?`,
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Khôi phục",
+          onPress: async () => {
+            await restoreExpense(item.id);
+            await loadTrash(); // refresh lại sau khi khôi phục
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -68,11 +90,14 @@ export default function TrashScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           renderItem={({ item }) => (
-            <View style={styles.item}>
+            <TouchableOpacity
+              onLongPress={() => handleRestore(item)}
+              style={styles.item}
+            >
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.amount}>{item.amount} đ</Text>
               <Text style={styles.date}>Đã xóa: {item.deletedAt}</Text>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <Text style={{ textAlign: "center", color: "#aaa", marginTop: 20 }}>

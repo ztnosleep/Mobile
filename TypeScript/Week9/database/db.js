@@ -61,3 +61,13 @@ export const getTrash = async () => {
   const result = await db.getAllAsync("SELECT * FROM trash ORDER BY deletedAt DESC");
   return result;
 };
+export const restoreExpense = async (id) => {
+  const item = await db.getFirstAsync("SELECT * FROM trash WHERE id = ?", [id]);
+  if (item) {
+    await db.runAsync(
+      "INSERT INTO expenses (title, amount, type, createdAt) VALUES (?, ?, ?, ?)",
+      [item.title, item.amount, item.type, item.createdAt]
+    );
+    await db.runAsync("DELETE FROM trash WHERE id = ?", [id]);
+  }
+};
