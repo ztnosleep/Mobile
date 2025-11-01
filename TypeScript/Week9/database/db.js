@@ -1,10 +1,10 @@
 // database/db.js
 import * as SQLite from "expo-sqlite";
 
-// ✅ Mở database (phiên bản mới Expo SDK 51+)
+// ✅ Mở database (Expo SDK 51+)
 const db = SQLite.openDatabaseSync("expenses_v2.db");
 
-// Tạo bảng (nếu chưa có)
+// Tạo bảng
 export async function createTable() {
   try {
     await db.execAsync(`
@@ -16,26 +16,23 @@ export async function createTable() {
         createdAt TEXT
       );
     `);
-    console.log("✅ Database table created");
+    console.log("✅ Table ready");
   } catch (error) {
     console.error("createTable error:", error);
   }
 }
 
-// Thêm dữ liệu mẫu (test)
-export async function insertSampleData() {
+// Thêm khoản mới
+export async function addExpense(title, amount, type) {
   try {
+    const date = new Date().toISOString().split("T")[0];
     await db.runAsync(
       "INSERT INTO expenses (title, amount, type, createdAt) VALUES (?, ?, ?, ?)",
-      ["Tiền lương", 10000000, "Thu", "2025-10-31"]
+      [title, amount, type, date]
     );
-    await db.runAsync(
-      "INSERT INTO expenses (title, amount, type, createdAt) VALUES (?, ?, ?, ?)",
-      ["Mua cà phê", 45000, "Chi", "2025-10-31"]
-    );
-    console.log("✅ Sample data inserted");
+    console.log("✅ Expense added:", title);
   } catch (error) {
-    console.error("insertSampleData error:", error);
+    console.error("addExpense error:", error);
   }
 }
 
