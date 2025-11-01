@@ -1,4 +1,3 @@
-// screens/TrashScreen.js
 import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
@@ -8,6 +7,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import { getTrash } from "../database/db";
 
@@ -15,18 +15,16 @@ export default function TrashScreen() {
   const [trash, setTrash] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
 
   const loadTrash = async () => {
-    setLoading(true);
     try {
       const data = await getTrash();
       setTrash(data || []);
       setFiltered(data || []);
     } catch (err) {
       console.error("loadTrash error:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -36,15 +34,17 @@ export default function TrashScreen() {
 
   const handleSearch = (text) => {
     setSearch(text);
-    if (text.trim() === "") {
-      setFiltered(trash);
-    } else {
+    if (text.trim() === "") setFiltered(trash);
+    else {
       const lower = text.toLowerCase();
-      const result = trash.filter((e) =>
-        e.title.toLowerCase().includes(lower)
-      );
-      setFiltered(result);
+      setFiltered(trash.filter((e) => e.title.toLowerCase().includes(lower)));
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadTrash();
+    setRefreshing(false);
   };
 
   return (
@@ -64,6 +64,9 @@ export default function TrashScreen() {
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id.toString()}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           renderItem={({ item }) => (
             <View style={styles.item}>
               <Text style={styles.title}>{item.title}</Text>

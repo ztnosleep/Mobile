@@ -1,4 +1,3 @@
-// screens/MainScreen.js
 import React, { useState, useEffect, useCallback } from "react";
 import {
   SafeAreaView,
@@ -10,6 +9,7 @@ import {
   StyleSheet,
   Alert,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { createTable, getExpenses, deleteExpense } from "../database/db";
@@ -18,18 +18,16 @@ export default function MainScreen({ navigation }) {
   const [expenses, setExpenses] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
 
   const loadExpenses = async () => {
-    setLoading(true);
     try {
       const data = await getExpenses();
       setExpenses(data || []);
       setFiltered(data || []);
     } catch (err) {
       console.error("MainScreen loadExpenses error:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -48,15 +46,17 @@ export default function MainScreen({ navigation }) {
 
   const handleSearch = (text) => {
     setSearch(text);
-    if (text.trim() === "") {
-      setFiltered(expenses);
-    } else {
+    if (text.trim() === "") setFiltered(expenses);
+    else {
       const lower = text.toLowerCase();
-      const result = expenses.filter((e) =>
-        e.title.toLowerCase().includes(lower)
-      );
-      setFiltered(result);
+      setFiltered(expenses.filter((e) => e.title.toLowerCase().includes(lower)));
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadExpenses();
+    setRefreshing(false);
   };
 
   return (
@@ -76,6 +76,9 @@ export default function MainScreen({ navigation }) {
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id.toString()}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[
