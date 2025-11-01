@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainScreen from "./screens/MainScreen";
 import EditExpenseScreen from "./screens/EditExpenseScreen";
 import AddScreen from "./screens/AddExpenseScreen";
+import  TrashScreen from "./screens/TrashScreen";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -20,7 +21,11 @@ export default function App() {
           component={EditExpenseScreen}
           options={{ title: "Sửa khoản Thu/Chi" }}
         />
-
+        <Stack.Screen
+          name="Trash"
+          component={TrashScreen}
+          options={{ title: "Thùng rác" }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

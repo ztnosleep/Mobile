@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import { createTable, getExpenses } from "../database/db";
+import { createTable, getExpenses, deleteExpense } from "../database/db";
+
 
 export default function MainScreen({ navigation }) {
   const [expenses, setExpenses] = useState([]);
@@ -36,13 +38,20 @@ export default function MainScreen({ navigation }) {
     }, [])
   );
 
-  // Tạo bảng khi app chạy lần đầu
-  useEffect(() => {
-    (async () => {
+useEffect(() => {
+  const initDB = async () => {
+    try {
+      console.log("🔧 Tạo bảng...");
       await createTable();
+      console.log("✅ Bảng đã sẵn sàng");
       await loadExpenses();
-    })();
-  }, []);
+    } catch (err) {
+      console.error("MainScreen initDB error:", err);
+    }
+  };
+  initDB();
+}, []);
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -60,8 +69,26 @@ export default function MainScreen({ navigation }) {
                 styles.item,
                 item.type === "Chi" ? styles.expenseItem : styles.incomeItem,
               ]}
-              onPress={() => navigation.navigate("EditExpense", { id: item.id })}
-
+              onPress={() =>
+                navigation.navigate("EditExpense", { id: item.id })
+              }
+              onLongPress={() => {
+                Alert.alert(
+                  "Xóa khoản này?",
+                  `Bạn có chắc muốn xóa "${item.title}" không?`,
+                  [
+                    { text: "Hủy", style: "cancel" },
+                    {
+                      text: "Xóa",
+                      style: "destructive",
+                      onPress: async () => {
+                        await deleteExpense(item.id);
+                        await loadExpenses(); // Cập nhật lại danh sách
+                      },
+                    },
+                  ]
+                );
+              }}
             >
               <View>
                 <Text style={styles.title}>{item.title}</Text>
@@ -86,6 +113,12 @@ export default function MainScreen({ navigation }) {
         onPress={() => navigation.navigate("Add")} // 👈 mở màn hình thêm
       >
         <Text style={styles.addText}>+</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.addButton, { bottom: 100, backgroundColor: "gray" }]}
+        onPress={() => navigation.navigate("Trash")}
+      >
+        <Text style={styles.addText}>🗑️</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
